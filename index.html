@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Ghostroom — Find Your Space</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: "#080808",
+            panel: "#111111",
+            panel2: "#171717",
+            line: "#292929"
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: #080808;
+      color: #f5f5f5;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    ::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #080808;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 10px;
+    }
+
+    .glass {
+      background: rgba(17, 17, 17, 0.82);
+      backdrop-filter: blur(16px);
+      border: 1px solid #292929;
+    }
+
+    .room-card {
+      transition: 0.25s ease;
+    }
+
+    .room-card:hover {
+      transform: translateY(-4px);
+      border-color: #555;
+    }
+
+    .green-glow {
+      box-shadow: 0 0 35px rgba(34, 197, 94, 0.08);
+    }
+
+    .yellow-glow {
+      box-shadow: 0 0 35px rgba(234, 179, 8, 0.08);
+    }
+
+    .red-glow {
+      box-shadow: 0 0 35px rgba(239, 68, 68, 0.08);
+    }
+
+    .modal {
+      display: none;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f5f5f5;
+      color: #080808;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      z-index: 100;
+      display: none;
+    }
+
+    .chat-message {
+      animation: appear 0.25s ease;
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="sticky top-0 z-50 glass">
+  <nav class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
+
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center font-black text-xl">
+        G
+      </div>
+
+      <div>
+        <h1 class="font-bold text-lg tracking-tight">Ghostroom</h1>
+        <p class="text-[10px] text-gray-500 uppercase tracking-widest">
+          Find your space
+        </p>
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-8 text-sm text-gray-400">
+      <a href="#rooms" class="hover:text-white">Rooms</a>
+      <a href="#timetable" class="hover:text-white">Timetable</a>
+      <a href="#groups" class="hover:text-white">Groups</a>
+      <a href="#app" class="hover:text-white">App</a>
+    </div>
+
+    <div class="flex items-center gap-2">
+
+      <button
+        onclick="openNotifications()"
+        class="relative w-10 h-10 rounded-xl border border-line bg-panel hover:bg-panel2 flex items-center justify-center"
+        title="Notifications">
+        🔔
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] flex items-center justify-center">
+          2
+        </span>
+      </button>
+
+      <button
+        onclick="openAI()"
+        class="w-10 h-10 rounded-xl bg-white text-black hover:bg-gray-200 flex items-center justify-center font-bold"
+        title="Ghost AI">
+        ✦
+      </button>
+
+    </div>
+  </nav>
+</header>
+
+
+<!-- ================= HERO ================= -->
+
+<main>
+
+<section class="max-w-7xl mx-auto px-5 pt-16 pb-12">
+
+  <div class="max-w-3xl">
+
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-line bg-panel text-xs text-gray-400 mb-6">
+      <span class="w-2 h-2 rounded-full bg-green-400"></span>
+      CAMPUS SPACE INTELLIGENCE
+    </div>
+
+    <h2 class="text-5xl md:text-7xl font-black tracking-tight leading-[0.95]">
+      Find an empty room.
+      <span class="text-gray-500">Without the hunt.</span>
+    </h2>
+
+    <p class="mt-6 text-gray-400 text-lg max-w-2xl">
+      Ghostroom helps students instantly discover available classrooms,
+      plan their schedule and make better use of unused campus space.
+    </p>
+
+  </div>
+
+
+  <!-- SEARCH -->
+
+  <div class="mt-10 max-w-5xl glass rounded-2xl p-3">
+
+    <div class="grid md:grid-cols-[1fr_180px_140px] gap-3">
+
+      <div class="flex items-center gap-3 bg-panel2 rounded-xl px-4">
+        <span class="text-gray-500">⌕</span>
+
+        <input
+          id="searchInput"
+          oninput="searchRooms()"
+          type="text"
+          placeholder="Search room, building or floor..."
+          class="w-full bg-transparent outline-none py-4 text-sm"
+        />
+      </div>
+
+      <select
+        id="buildingFilter"
+        onchange="filterRooms()"
+        class="bg-panel2 rounded-xl px-4 outline-none text-sm text-gray-300">
+        <option value="all">All Buildings</option>
+        <option value="Academic A">Academic A</option>
+        <option value="Academic B">Academic B</option>
+        <option value="Library">Library</option>
+      </select>
+
+      <button
+        onclick="findRooms()"
+        class="bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition">
+        Find Rooms
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= STATUS ================= -->
+
+<section id="rooms" class="max-w-7xl mx-auto px-5 py-8">
+
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-7">
+
+    <div>
+      <p class="text-xs text-gray-500 uppercase tracking-widest">
+        Live availability
+      </p>
+
+      <h3 class="text-2xl font-bold mt-1">
+        Rooms right now
+      </h3>
+    </div>
+
+    <div class="flex gap-5 text-xs text-gray-400">
+
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+        Confirmed empty
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+        Uncertain
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+        Occupied
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ROOM GRID -->
+
+  <div id="roomGrid" class="grid md:grid-cols-2 gap-5">
+  </div>
+
+</section>
+
+
+<!-- ================= SMART FEATURES ================= -->
+
+<section class="max-w-7xl mx-auto px-5 py-14">
+
+  <div class="grid md:grid-cols-3 gap-5">
+
+    <div class="glass rounded-2xl p-6">
+
+      <div class="text-2xl mb-5">🔔</div>
+
+      <h3 class="font-bold text-lg">
+        Never wait for a room
+      </h3>
+
+      <p class="text-sm text-gray-500 mt-2">
+        Set your preferred requirements and Ghostroom can alert you
+        when a suitable room becomes available.
+      </p>
+
+      <button
+        onclick="openNotifications()"
+        class="mt-5 text-sm font-semibold text-white hover:underline">
+        Set notification →
+      </button>
+
+    </div>
+
+
+    <div class="glass rounded-2xl p-6">
+
+      <div class="text-2xl mb-5">✦</div>
+
+      <h3 class="font-bold text-lg">
+        Your AI campus assistant
+      </h3>
+
+      <p class="text-sm text-gray-500 mt-2">
+        Ask Ghost AI about your weekly schedule, important classes,
+        rooms or what you should focus on.
+      </p>
+
+      <button
+        onclick="openAI()"
+        class="mt-5 text-sm font-semibold text-white hover:underline">
+        Talk to Ghost AI →
+      </button>
+
+    </div>
+
+
+    <div class="glass rounded-2xl p-6">
+
+      <div class="text-2xl mb-5">📊</div>
+
+      <h3 class="font-bold text-lg">
+        Better campus utilization
+      </h3>
+
+      <p class="text-sm text-gray-500 mt-2">
+        Help institutions understand unused classroom capacity
+        and make smarter space decisions.
+      </p>
+
+      <button
+        onclick="showToast('Campus analytics coming soon')"
+        class="mt-5 text-sm font-semibold text-white hover:underline">
+        Explore analytics →
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= TIMETABLE ================= -->
+
+<section id="timetable" class="max-w-7xl mx-auto px-5 py-10">
+
+  <div class="glass rounded-3xl p-7 md:p-10">
+
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+
+      <div>
+
+        <p class="text-xs text-gray-500 uppercase tracking-widest">
+          Smart timetable
+        </p>
+
+        <h2 class="text-3xl font-black mt-2">
+          Upload once.
+          <br>
+          Find rooms automatically.
+        </h2>
+
+        <p class="text-gray-500 mt-4 max-w-lg">
+          Upload your timetable as a PDF or image. Ghostroom can use
+          the schedule to determine when classrooms are likely to be free.
+        </p>
+
+        <button
+          onclick="document.getElementById('fileInput').click()"
+          class="mt-6 px-5 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200">
+          📤 Upload Timetable
+        </button>
+
+        <input
+          id="fileInput"
+          type="file"
+          accept=".pdf,image/*"
+          class="hidden"
+          onchange="uploadTimetable(this)"
+        />
+
+      </div>
+
+
+      <div class="bg-panel2 rounded-2xl border border-line p-6">
+
+        <div class="flex items-center justify-between mb-5">
+          <span class="text-sm font-bold">My timetable</span>
+          <span class="text-xs text-green-400">READY</span>
+        </div>
+
+        <div class="space-y-3">
+
+          <div class="flex justify-between p-3 rounded-xl bg-panel">
+            <span class="text-sm">Data Structures</span>
+            <span class="text-xs text-gray-500">10:00 AM</span>
+          </div>
+
+          <div class="flex justify-between p-3 rounded-xl bg-panel">
+            <span class="text-sm">Operating Systems</span>
+            <span class="text-xs text-gray-500">12:00 PM</span>
+          </div>
+
+          <div class="flex justify-between p-3 rounded-xl bg-panel">
+            <span class="text-sm">Machine Learning</span>
+            <span class="text-xs text-gray-500">2:00 PM</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= GROUPS ================= -->
+
+<section id="groups" class="max-w-7xl mx-auto px-5 py-10">
+
+  <div class="flex items-end justify-between mb-7">
+
+    <div>
+      <p class="text-xs text-gray-500 uppercase tracking-widest">
+        Social study
+      </p>
+
+      <h2 class="text-2xl font-bold mt-1">
+        Study Groups
+      </h2>
+    </div>
+
+    <button
+      onclick="createGroup()"
+      class="text-sm border border-line px-4 py-2 rounded-xl hover:bg-panel">
+      + Create Group
+    </button>
+
+  </div>
+
+
+  <div class="grid md:grid-cols-3 gap-5">
+
+    <div class="glass rounded-2xl p-5">
+
+      <div class="flex justify-between">
+        <div>
+          <h3 class="font-bold">DSA Warriors</h3>
+          <p class="text-xs text-gray-500 mt-1">5 members</p>
+        </div>
+
+        <span class="text-xs text-green-400">ACTIVE</span>
+      </div>
+
+      <button
+        onclick="joinGroup('DSA Warriors')"
+        class="w-full mt-5 bg-white text-black rounded-xl py-2.5 text-sm font-bold">
+        Join Group
+      </button>
+
+    </div>
+
+
+    <div class="glass rounded-2xl p-5">
+
+      <div class="flex justify-between">
+        <div>
+          <h3 class="font-bold">Hackathon Team</h3>
+          <p class="text-xs text-gray-500 mt-1">4 members</p>
+        </div>
+
+        <span class="text-xs text-green-400">ACTIVE</span>
+      </div>
+
+      <button
+        onclick="joinGroup('Hackathon Team')"
+        class="w-full mt-5 bg-white text-black rounded-xl py-2.5 text-sm font-bold">
+        Join Group
+      </button>
+
+    </div>
+
+
+    <div class="glass rounded-2xl p-5">
+
+      <div class="flex justify-between">
+        <div>
+          <h3 class="font-bold">Exam Prep</h3>
+          <p class="text-xs text-gray-500 mt-1">8 members</p>
+        </div>
+
+        <span class="text-xs text-yellow-400">OPEN</span>
+      </div>
+
+      <button
+        onclick="joinGroup('Exam Prep')"
+        class="w-full mt-5 bg-white text-black rounded-xl py-2.5 text-sm font-bold">
+        Join Group
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= APP ================= -->
+
+<section id="app" class="max-w-7xl mx-auto px-5 py-10">
+
+  <div class="glass rounded-3xl p-8 md:p-12 overflow-hidden relative">
+
+    <div class="max-w-xl">
+
+      <p class="text-xs text-gray-500 uppercase tracking-widest">
+        Ghostroom Mobile
+      </p>
+
+      <h2 class="text-4xl font-black mt-2">
+        Your campus.
+        <br>
+        In your pocket.
+      </h2>
+
+      <p class="text-gray-500 mt-4">
+        Find rooms, receive alerts and manage your schedule
+        wherever you are.
+      </p>
+
+      <button
+        onclick="showToast('Mobile app link will be available soon')"
+        class="mt-6 px-5 py-3 bg-white text-black rounded-xl font-bold">
+        📱 Get Ghostroom App
+      </button>
+
+    </div>
+
+    <div class="hidden md:block absolute right-16 top-10 w-40 h-72 border border-gray-700 rounded-[30px] rotate-6 bg-black p-3">
+
+      <div class="w-full h-full border border-gray-800 rounded-[22px] p-4">
+
+        <div class="text-xs font-bold">Ghostroom</div>
+
+        <div class="mt-8 text-[9px] text-gray-500">
+          AVAILABLE NOW
+        </div>
+
+        <div class="mt-2 text-2xl font-black text-green-400">
+          08
+        </div>
+
+        <div class="mt-8 h-2 bg-green-500 rounded-full"></div>
+        <div class="mt-2 h-2 bg-gray-700 rounded-full"></div>
+        <div class="mt-2 h-2 bg-gray-700 rounded-full"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+</main>
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer class="border-t border-line mt-10">
+
+  <div class="max-w-7xl mx-auto px-5 py-8 flex flex-col md:flex-row justify-between gap-4">
+
+    <div>
+      <div class="font-bold">Ghostroom</div>
+      <p class="text-xs text-gray-600 mt-1">
+        Making campus space smarter.
+      </p>
+    </div>
+
+    <button
+      onclick="feedback()"
+      class="text-sm text-gray-400 hover:text-white">
+      💬 Give Feedback
+    </button>
+
+  </div>
+
+</footer>
+
+
+<!-- ================= NOTIFICATION MODAL ================= -->
+
+<div id="notificationModal"
+     class="modal fixed inset-0 z-[90] bg-black/80 items-center justify-center p-5">
+
+  <div class="glass rounded-3xl w-full max-w-md p-7">
+
+    <div class="flex justify-between items-center">
+
+      <div>
+        <p class="text-xs text-gray-500 uppercase tracking-widest">
+          Notifications
+        </p>
+
+        <h2 class="text-2xl font-bold mt-1">
+          Room Alerts
+        </h2>
+      </div>
+
+      <button onclick="closeNotifications()" class="text-gray-500 text-xl">
+        ×
+      </button>
+
+    </div>
+
+
+    <div class="mt-6 space-y-3">
+
+      <div class="bg-panel2 rounded-xl p-4">
+        <p class="text-sm font-bold">Room B-204 is empty</p>
+        <p class="text-xs text-gray-500 mt-1">
+          Available until 3:30 PM
+        </p>
+      </div>
+
+      <div class="bg-panel2 rounded-xl p-4">
+        <p class="text-sm font-bold">Upcoming class</p>
+        <p class="text-xs text-gray-500 mt-1">
+          Data Structures starts in 45 minutes
+        </p>
+      </div>
+
+    </div>
+
+
+    <div class="mt-6 border-t border-line pt-5">
+
+      <div class="flex justify-between items-center">
+        <div>
+          <p class="text-sm font-bold">Notify me automatically</p>
+          <p class="text-xs text-gray-500">
+            Alert when a suitable room opens
+          </p>
+        </div>
+
+        <button
+          id="notificationToggle"
+          onclick="toggleNotifications()"
+          class="w-12 h-7 rounded-full bg-gray-700 relative">
+
+          <span id="toggleCircle"
+                class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition">
+          </span>
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================= AI MODAL ================= -->
+
+<div id="aiModal"
+     class="modal fixed inset-0 z-[90] bg-black/80 items-center justify-center p-5">
+
+  <div class="glass rounded-3xl w-full max-w-lg p-6">
+
+    <div class="flex justify-between items-center">
+
+      <div class="flex items-center gap-3">
+
+        <div class="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center font-bold">
+          ✦
+        </div>
+
+        <div>
+          <h2 class="font-bold">Ghost AI</h2>
+          <p class="text-[10px] text-green-400">
+            PERSONAL ASSISTANT
+          </p>
+        </div>
+
+      </div>
+
+      <button onclick="closeAI()" class="text-gray-500 text-xl">
+        ×
+      </button>
+
+    </div>
+
+
+    <div id="chat"
+         class="h-80 overflow-y-auto mt-5 space-y-3 pr-2">
+
+      <div class="chat-message bg-panel2 rounded-2xl rounded-tl-sm p-3 text-sm text-gray-300">
+        Hey! I'm Ghost AI. I can help you find rooms, plan your week,
+        or tell you what's important about your classes.
+      </div>
+
+      <div class="chat-message bg-white text-black rounded-2xl rounded-tr-sm p-3 text-sm ml-12">
+        What should I focus on tomorrow?
+      </div>
+
+      <div class="chat-message bg-panel2 rounded-2xl rounded-tl-sm p-3 text-sm text-gray-300">
+        You have Data Structures at 10 AM. I'd recommend revising
+        trees and graphs before class.
+      </div>
+
+    </div>
+
+
+    <div class="flex gap-2 mt-4">
+
+      <input
+        id="chatInput"
+        onkeydown="if(event.key==='Enter') sendMessage()"
+        placeholder="Ask Ghost AI..."
+        class="flex-1 bg-panel2 border border-line rounded-xl px-4 py-3 text-sm outline-none focus:border-gray-500"
+      />
+
+      <button
+        onclick="sendMessage()"
+        class="w-12 rounded-xl bg-white text-black font-bold">
+        ↑
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================= TOAST ================= -->
+
+<div id="toast" class="toast"></div>
+
+
+<script>
+
+/* ================= ROOM DATA ================= */
+
+const rooms = [
+
+  {
+    room: "A-101",
+    building: "Academic A",
+    floor: "1st Floor",
+    capacity: 40,
+    status: "available",
+    next: "11:00 AM"
+  },
+
+  {
+    room: "A-204",
+    building: "Academic A",
+    floor: "2nd Floor",
+    capacity: 60,
+    status: "occupied",
+    next: "1:30 PM"
+  },
+
+  {
+    room: "B-204",
+    building: "Academic B",
+    floor: "2nd Floor",
+    capacity: 30,
+    status: "available",
+    next: "3:30 PM"
+  },
+
+  {
+    room: "B-310",
+    building: "Academic B",
+    floor: "3rd Floor",
+    capacity: 80,
+    status: "uncertain",
+    next: "4:00 PM"
+  },
+
+  {
+    room: "L-101",
+    building: "Library",
+    floor: "1st Floor",
+    capacity: 20,
+    status: "available",
+    next: "5:00 PM"
+  },
+
+  {
+    room: "L-204",
+    building: "Library",
+    floor: "2nd Floor",
+    capacity: 40,
+    status: "occupied",
+    next: "2:00 PM"
+  }
+
+];
+
+
+/* ================= RENDER ROOMS ================= */
+
+function renderRooms(data) {
+
+  const grid = document.getElementById("roomGrid");
+
+  if (!data.length) {
+
+    grid.innerHTML = `
+      <div class="col-span-full glass rounded-2xl p-10 text-center">
+        <div class="text-3xl mb-3">👻</div>
+        <h3 class="font-bold">No rooms found</h3>
+        <p class="text-sm text-gray-500 mt-1">
+          Try another building or search term.
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+
+  grid.innerHTML = data.map(room => {
+
+    let color = "";
+    let badge = "";
+    let glow = "";
+
+    if (room.status === "available") {
+      color = "green";
+      badge = "CONFIRMED EMPTY";
+      glow = "green-glow";
+    }
+
+    if (room.status === "uncertain") {
+      color = "yellow";
+      badge = "UNCERTAIN";
+      glow = "yellow-glow";
+    }
+
+    if (room.status === "occupied") {
+      color = "red";
+      badge = "OCCUPIED";
+      glow = "red-glow";
+    }
+
+
+    return `
+
+      <article class="room-card glass rounded-2xl p-6 ${glow}">
+
+        <div class="flex items-start justify-between">
+
+          <div>
+
+            <div class="flex items-center gap-3">
+
+              <span class="w-3 h-3 rounded-full bg-${color}-500"></span>
+
+              <h3 class="text-2xl font-black">
+                ${room.room}
+              </h3>
+
+            </div>
+
+            <p class="text-sm text-gray-500 mt-2">
+              ${room.building} · ${room.floor}
+            </p>
+
+          </div>
+
+          <span class="text-[10px] font-bold tracking-wider px-3 py-1.5 rounded-full bg-${color}-500/10 text-${color}-400 border border-${color}-500/20">
+            ${badge}
+          </span>
+
+        </div>
+
+
+        <div class="grid grid-cols-2 gap-3 mt-7">
+
+          <div class="bg-panel2 rounded-xl p-3">
+
+            <p class="text-[10px] uppercase text-gray-600">
+              Capacity
+            </p>
+
+            <p class="font-bold mt-1">
+              ${room.capacity} seats
+            </p>
+
+          </div>
+
+
+          <div class="bg-panel2 rounded-xl p-3">
+
+            <p class="text-[10px] uppercase text-gray-600">
+              Next change
+            </p>
+
+            <p class="font-bold mt-1">
+              ${room.next}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <button
+          onclick="viewRoom('${room.room}')"
+          class="w-full mt-4 border border-line rounded-xl py-3 text-sm font-bold hover:bg-white hover:text-black transition">
+
+          View Room →
+
+        </button>
+
+      </article>
+
+    `;
+
+  }).join("");
+
+}
+
+
+/* ================= SEARCH ================= */
+
+function searchRooms() {
+
+  const query =
+    document.getElementById("searchInput").value.toLowerCase();
+
+  const building =
+    document.getElementById("buildingFilter").value;
+
+
+  const filtered = rooms.filter(room => {
+
+    const matchesSearch =
+      room.room.toLowerCase().includes(query) ||
+      room.building.toLowerCase().includes(query) ||
+      room.floor.toLowerCase().includes(query);
+
+    const matchesBuilding =
+      building === "all" ||
+      room.building === building;
+
+    return matchesSearch && matchesBuilding;
+
+  });
+
+
+  renderRooms(filtered);
+}
+
+
+function filterRooms() {
+  searchRooms();
+}
+
+
+function findRooms() {
+
+  document.getElementById("rooms").scrollIntoView({
+    behavior: "smooth"
+  });
+
+  showToast("Finding the best available rooms...");
+}
+
+
+/* ================= ROOM ================= */
+
+function viewRoom(room) {
+
+  const found = rooms.find(r => r.room === room);
+
+  showToast(
+    `${found.room} · ${found.building} · ${found.capacity} seats`
+  );
+}
+
+
+/* ================= NOTIFICATIONS ================= */
+
+function openNotifications() {
+  document.getElementById("notificationModal")
+    .classList.add("active");
+}
+
+
+function closeNotifications() {
+  document.getElementById("notificationModal")
+    .classList.remove("active");
+}
+
+
+let notificationsEnabled = false;
+
+
+function toggleNotifications() {
+
+  notificationsEnabled = !notificationsEnabled;
+
+  const toggle =
+    document.getElementById("notificationToggle");
+
+  const circle =
+    document.getElementById("toggleCircle");
+
+
+  if (notificationsEnabled) {
+
+    toggle.classList.remove("bg-gray-700");
+    toggle.classList.add("bg-green-500");
+
+    circle.style.transform = "translateX(20px)";
+
+    showToast("Room notifications enabled");
+
+  } else {
+
+    toggle.classList.add("bg-gray-700");
+    toggle.classList.remove("bg-green-500");
+
+    circle.style.transform = "translateX(0px)";
+
+    showToast("Room notifications disabled");
+
+  }
+
+}
+
+
+/* ================= AI ================= */
+
+function openAI() {
+  document.getElementById("aiModal")
+    .classList.add("active");
+}
+
+
+function closeAI() {
+  document.getElementById("aiModal")
+    .classList.remove("active");
+}
+
+
+function sendMessage() {
+
+  const input =
+    document.getElementById("chatInput");
+
+  const text = input.value.trim();
+
+  if (!text) return;
+
+
+  const chat =
+    document.getElementById("chat");
+
+
+  chat.innerHTML += `
+
+    <div class="chat-message bg-white text-black rounded-2xl rounded-tr-sm p-3 text-sm ml-12">
+      ${text}
+    </div>
+
+  `;
+
+
+  input.value = "";
+
+
+  setTimeout(() => {
+
+    chat.innerHTML += `
+
+      <div class="chat-message bg-panel2 rounded-2xl rounded-tl-sm p-3 text-sm text-gray-300">
+        Based on your schedule, I can help you find an empty room,
+        organize your week, or identify important classes to focus on.
+      </div>
+
+    `;
+
+    chat.scrollTop = chat.scrollHeight;
+
+  }, 500);
+
+}
+
+
+/* ================= GROUPS ================= */
+
+function createGroup() {
+
+  const name =
+    prompt("Enter your study group name:");
+
+  if (name) {
+
+    showToast(`Study group "${name}" created!`);
+
+  }
+
+}
+
+
+function joinGroup(name) {
+
+  showToast(`Joined ${name} 🎉`);
+
+}
+
+
+/* ================= TIMETABLE ================= */
+
+function uploadTimetable(input) {
+
+  if (!input.files.length) return;
+
+  showToast(
+    `Timetable "${input.files[0].name}" uploaded`
+  );
+
+}
+
+
+/* ================= FEEDBACK ================= */
+
+function feedback() {
+
+  const message =
+    prompt("Tell us what you think about Ghostroom:");
+
+  if (message) {
+
+    showToast("Thanks for your feedback!");
+
+  }
+
+}
+
+
+/* ================= TOAST ================= */
+
+function showToast(message) {
+
+  const toast =
+    document.getElementById("toast");
+
+  toast.textContent = message;
+
+  toast.style.display = "block";
+
+  clearTimeout(window.toastTimer);
+
+  window.toastTimer =
+    setTimeout(() => {
+
+      toast.style.display = "none";
+
+    }, 2500);
+
+}
+
+
+/* ================= INITIALIZE ================= */
+
+renderRooms(rooms);
+
+</script>
+
+</body>
+</html>
